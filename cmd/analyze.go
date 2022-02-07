@@ -38,13 +38,35 @@ func BuildAnalyzeCommand(cmd *cobra.Command, args []string) (AnalyzeCommand, err
 	}, nil
 }
 
-func analyzeLine(analyzeCommand AnalyzeCommand, line string) {
-  match, err := regexp.Match(analyzeCommand.SearchPattern, []byte(line))
+func regexMatch(content string, pattern string) bool {
+  match, err := regexp.Match(pattern, []byte(content))
 
   utils.Check(err)
 
-  if match {
-    fmt.Println(line)
+  return match
+}
+
+func analyzeLine(analyzeCommand AnalyzeCommand, line string) {
+  var processedLine string
+
+  if analyzeCommand.SearchPattern != "" {
+    match := regexMatch(line, analyzeCommand.SearchPattern)
+
+    if !match {
+      return
+    }
+
+    processedLine = line
+  }
+
+  for _, pattern := range analyzeCommand.Pattern {
+    match := regexMatch(processedLine, pattern)
+
+    if !match || !analyzeCommand.Json {
+      continue
+    }
+
+    utils.ExtractJsonFromString(line)
   }
 }
 
