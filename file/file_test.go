@@ -3,14 +3,13 @@ package file_test
 import (
 	"io/ioutil"
 	"lazy-log/file"
-	"lazy-log/utils"
 	tests_helpers "lazy-log/tests"
+	"lazy-log/utils"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
 )
-
 
 func Test_CheckIfValidFile(t *testing.T) {
 	tmpFile, err := ioutil.TempFile("", "test*.log")
