@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"lazy-log/file"
 	"lazy-log/utils"
+	"regexp"
 
 	"github.com/spf13/cobra"
 )
@@ -19,8 +20,16 @@ func analyze(cmd *cobra.Command, args []string) {
 		utils.ExitGracefully(err)
 	}
 
-  file.ProcessLogFile(analyzeCommand, func(line string) {
-  })
+	file.ProcessLogFile(analyzeCommand, func(line string) {
+
+		match, err := regexp.Match(analyzeCommand.SearchPattern, []byte(line))
+
+		utils.Check(err)
+
+		if match {
+			fmt.Println(line)
+		}
+	})
 
 	fmt.Println(analyzeCommand)
 }
@@ -29,7 +38,7 @@ func analyze(cmd *cobra.Command, args []string) {
 var analyzeCmd = &cobra.Command{
 	Use:   "analyze",
 	Short: "Begin analyzing a log file",
-	Run: analyze,
+	Run:   analyze,
 }
 
 func init() {
