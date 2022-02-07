@@ -85,16 +85,19 @@ func Test_BuildAnalyzeCommand(t *testing.T) {
 			args: []string{"analyze", "file.log"},
 			function: func(command *cobra.Command, args []string) {
 				analyzeCommand, err := cmd.BuildAnalyzeCommand(command, args)
-				expectedCommand := cmd.AnalyzeCommand{}
-				errorMessage := "Search text is empty"
+				expectedCommand := cmd.AnalyzeCommand{
+          Filepath: "file.log",
+          Pattern: []string{},
+          Json: false,
+        }
 
 				if !reflect.DeepEqual(analyzeCommand, expectedCommand) {
 					testError(t, analyzeCommand, expectedCommand)
 					return
 				}
 
-				if err != nil && string(err.Error()) != errorMessage {
-					testError(t, err.Error(), errorMessage)
+				if err != nil {
+          t.Errorf("Unexpected error: {%v}", err)
 				}
 			},
 		},
@@ -103,16 +106,19 @@ func Test_BuildAnalyzeCommand(t *testing.T) {
 			args: []string{"analyze", "file.log", "--search="},
 			function: func(command *cobra.Command, args []string) {
 				analyzeCommand, err := cmd.BuildAnalyzeCommand(command, args)
-				expectedCommand := cmd.AnalyzeCommand{}
-				errorMessage := "Search text is empty"
+				expectedCommand := cmd.AnalyzeCommand{
+          Filepath: "file.log",
+          Pattern: []string{},
+          Json: false,
+        }
 
 				if !reflect.DeepEqual(analyzeCommand, expectedCommand) {
 					testError(t, analyzeCommand, expectedCommand)
 					return
 				}
 
-				if err != nil && string(err.Error()) != errorMessage {
-					testError(t, err.Error(), errorMessage)
+				if err != nil {
+          t.Errorf("Unexpected error: {%v}", err)
 				}
 			},
 		},

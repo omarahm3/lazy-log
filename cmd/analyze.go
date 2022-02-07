@@ -30,10 +30,6 @@ func BuildAnalyzeCommand(cmd *cobra.Command, args []string) (AnalyzeCommand, err
 
 	search := cmd.Flag("search").Value.String()
 
-	if search == "" {
-		return AnalyzeCommand{}, errors.New("Search text is empty")
-	}
-
 	return AnalyzeCommand{
 		Filepath:      args[0],
 		SearchPattern: search,
