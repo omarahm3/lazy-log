@@ -3,8 +3,10 @@ package file
 import (
 	"bytes"
 	"io/ioutil"
+	"lazy-log/utils"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -48,7 +50,7 @@ func executeCommand(root *cobra.Command, args ...string) (output string, err err
 }
 
 func testError(test *testing.T, actual interface{}, expected interface{}) {
-  test.Errorf("\nActual: %v\nExpected: %v", actual, expected)
+	test.Errorf("\nActual: %v\nExpected: %v", actual, expected)
 }
 
 func Test_BuildAnalyzeCommand(t *testing.T) {
@@ -68,7 +70,7 @@ func Test_BuildAnalyzeCommand(t *testing.T) {
 				}
 
 				if !reflect.DeepEqual(analyzeCommand, expectedCommand) {
-          testError(t, analyzeCommand, expectedCommand)
+					testError(t, analyzeCommand, expectedCommand)
 				}
 			},
 		},
@@ -81,12 +83,12 @@ func Test_BuildAnalyzeCommand(t *testing.T) {
 				errorMessage := "Search text is empty"
 
 				if !reflect.DeepEqual(analyzeCommand, expectedCommand) {
-          testError(t, analyzeCommand, expectedCommand)
-          return
+					testError(t, analyzeCommand, expectedCommand)
+					return
 				}
 
 				if err != nil && string(err.Error()) != errorMessage {
-          testError(t, err.Error(), errorMessage)
+					testError(t, err.Error(), errorMessage)
 				}
 			},
 		},
@@ -99,12 +101,12 @@ func Test_BuildAnalyzeCommand(t *testing.T) {
 				errorMessage := "Search text is empty"
 
 				if !reflect.DeepEqual(analyzeCommand, expectedCommand) {
-          testError(t, analyzeCommand, expectedCommand)
-          return
+					testError(t, analyzeCommand, expectedCommand)
+					return
 				}
 
 				if err != nil && string(err.Error()) != errorMessage {
-          testError(t, err.Error(), errorMessage)
+					testError(t, err.Error(), errorMessage)
 				}
 			},
 		},
@@ -117,12 +119,12 @@ func Test_BuildAnalyzeCommand(t *testing.T) {
 				errorMessage := "filepath is required as an argument"
 
 				if !reflect.DeepEqual(analyzeCommand, expectedCommand) {
-          testError(t, analyzeCommand, expectedCommand)
-          return
+					testError(t, analyzeCommand, expectedCommand)
+					return
 				}
 
 				if err != nil && string(err.Error()) != errorMessage {
-          testError(t, err.Error(), errorMessage)
+					testError(t, err.Error(), errorMessage)
 				}
 			},
 		},
@@ -171,14 +173,65 @@ func Test_CheckIfValidFile(t *testing.T) {
 			result, err := CheckIfValidFile(test.filename)
 
 			if (err != nil) != test.expectError {
-        t.Errorf("Error: %v, Expect error: %v", err, test.expectError)
+				t.Errorf("Error: %v, Expect error: %v", err, test.expectError)
 				return
 			}
 
 			if result != test.expected {
-        testError(t, result, test.expectError)
+				testError(t, result, test.expectError)
 				return
 			}
+		})
+	}
+}
+
+func Test_ScanFile(t *testing.T) {
+	tests := []struct {
+		name        string
+		fileContent string
+		expected    bool
+		expectError bool
+	}{
+		{
+			name:        "Scanner scan each line",
+			fileContent: "1\n2\n3\n4\n5",
+			expected:    true,
+			expectError: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			tmpFile, err := ioutil.TempFile("", "test.log")
+
+			utils.Check(err)
+
+			defer os.Remove(tmpFile.Name())
+
+			_, err = tmpFile.WriteString(test.fileContent)
+
+			utils.Check(err)
+
+			// Persist data on disk
+			err = tmpFile.Sync()
+
+			utils.Check(err)
+
+      var lines []string
+
+			ProcessLogFile(AnalyzeCommand{
+				Filepath:      tmpFile.Name(),
+				SearchPattern: "test",
+			}, func(line string) {
+        lines = append(lines, line)
+			})
+
+      expectedOutput := strings.Split(test.fileContent, "\n")
+
+      if !reflect.DeepEqual(lines, expectedOutput) {
+				testError(t, lines, expectedOutput)
+				return
+      }
 		})
 	}
 }

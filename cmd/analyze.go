@@ -19,6 +19,9 @@ func analyze(cmd *cobra.Command, args []string) {
 		utils.ExitGracefully(err)
 	}
 
+  file.ProcessLogFile(analyzeCommand, func(line string) {
+  })
+
 	fmt.Println(analyzeCommand)
 }
 
