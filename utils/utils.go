@@ -39,17 +39,19 @@ func prettyJsonString(content string) string {
 // And then it will return a pretty JSON string
 func extractJsonFromSubString(substring string) (string, int, error) {
 	stack := []string{}
-	jsonString := []string{}
+	var jsonString string
+  var char rune
 
-	for _, char := range substring {
+	for _, char = range substring {
 		if strings.ContainsAny(string(char), "{[") {
 			stack = append(stack, string(char))
-			jsonString = append(jsonString, string(char))
+      jsonString += string(char)
 			continue
 		}
 
 		if len(stack) == 0 {
-			return prettyJsonString(sliceToString(jsonString)), len(jsonString), nil
+      fmt.Println("Break inside loop")
+			return prettyJsonString(jsonString), len(jsonString), nil
 		}
 
 		switch string(char) {
@@ -68,14 +70,15 @@ func extractJsonFromSubString(substring string) (string, int, error) {
 				return "", 0, errors.New("Invalid JSON input, opening { is not closed")
 			}
 		}
-		jsonString = append(jsonString, string(char))
+    jsonString += string(char)
 	}
 
 	if len(stack) > 0 {
 		return "", 0, errors.New("String is not JSON, not completed")
 	}
 
-  return prettyJsonString(sliceToString(jsonString)), len(jsonString), nil
+  fmt.Println("Break at the end, Char is: ", string(char))
+  return prettyJsonString(jsonString), len(jsonString), nil
 }
 
 func ExtractJsonFromString(content string) (string, int, int, error) {
