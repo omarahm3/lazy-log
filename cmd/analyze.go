@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"lazy-log/file"
 	"lazy-log/utils"
@@ -9,18 +10,50 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func analyzeLine(analyzeCommand file.AnalyzeCommand, line string) {
+type AnalyzeCommand struct {
+	Filepath      string
+	SearchPattern string
+	Pattern       []string
+	Json          bool
+}
+
+func BuildAnalyzeCommand(cmd *cobra.Command, args []string) (AnalyzeCommand, error) {
+	if len(args) != 1 {
+		return AnalyzeCommand{}, errors.New("filepath is required as an argument")
+	}
+
+	pattern, err := cmd.Flags().GetStringSlice("pattern")
+	utils.Check(err)
+
+	json, err := cmd.Flags().GetBool("json")
+	utils.Check(err)
+
+	search := cmd.Flag("search").Value.String()
+
+	if search == "" {
+		return AnalyzeCommand{}, errors.New("Search text is empty")
+	}
+
+	return AnalyzeCommand{
+		Filepath:      args[0],
+		SearchPattern: search,
+		Pattern:       pattern,
+		Json:          json,
+	}, nil
+}
+
+func analyzeLine(analyzeCommand AnalyzeCommand, line string) {
   match, err := regexp.Match(analyzeCommand.SearchPattern, []byte(line))
 
   utils.Check(err)
 
   if match {
-    // fmt.Println(line)
+    fmt.Println(line)
   }
 }
 
 func analyze(cmd *cobra.Command, args []string) {
-	analyzeCommand, err := file.BuildAnalyzeCommand(cmd, args)
+	analyzeCommand, err := BuildAnalyzeCommand(cmd, args)
 
 	if err != nil {
 		utils.ExitGracefully(err)
@@ -30,7 +63,7 @@ func analyze(cmd *cobra.Command, args []string) {
 		utils.ExitGracefully(err)
 	}
 
-	file.ProcessLogFile(analyzeCommand, func(line string) {
+	file.ProcessLogFile(analyzeCommand.Filepath, func(line string) {
     analyzeLine(analyzeCommand, line)
 	})
 

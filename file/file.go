@@ -6,41 +6,7 @@ import (
 	"io"
 	"lazy-log/utils"
 	"os"
-
-	"github.com/spf13/cobra"
 )
-
-type AnalyzeCommand struct {
-	Filepath      string
-	SearchPattern string
-	Pattern       []string
-	Json          bool
-}
-
-func BuildAnalyzeCommand(cmd *cobra.Command, args []string) (AnalyzeCommand, error) {
-	if len(args) != 1 {
-		return AnalyzeCommand{}, errors.New("filepath is required as an argument")
-	}
-
-	pattern, err := cmd.Flags().GetStringSlice("pattern")
-	utils.Check(err)
-
-	json, err := cmd.Flags().GetBool("json")
-	utils.Check(err)
-
-	search := cmd.Flag("search").Value.String()
-
-	if search == "" {
-		return AnalyzeCommand{}, errors.New("Search text is empty")
-	}
-
-	return AnalyzeCommand{
-		Filepath:      args[0],
-		SearchPattern: search,
-		Pattern:       pattern,
-		Json:          json,
-	}, nil
-}
 
 func CheckIfValidFile(filepath string) (bool, error) {
 	if _, err := os.Stat(filepath); err != nil && os.IsNotExist(err) {
@@ -118,6 +84,6 @@ func ScanFile(filepath string, processor func(line string)) {
 	}
 }
 
-func ProcessLogFile(analyzeCommand AnalyzeCommand, processor func(line string)) {
-	ScanFile(analyzeCommand.Filepath, processor)
+func ProcessLogFile(filepath string, processor func(line string)) {
+	ScanFile(filepath, processor)
 }

@@ -1,8 +1,10 @@
-package file
+package file_test
 
 import (
 	"bytes"
 	"io/ioutil"
+	"lazy-log/cmd"
+	"lazy-log/file"
 	"lazy-log/utils"
 	"os"
 	"reflect"
@@ -27,6 +29,8 @@ func newCommand(analyzeFunc func(cmd *cobra.Command, args []string)) *cobra.Comm
 	}
 
 	analyzeCommand.Flags().String("search", "", "Search pattern to track in the logs")
+  analyzeCommand.Flags().StringSlice("pattern", []string{}, "Search patterns to track in the logs")
+	analyzeCommand.Flags().Bool("json", false, "Parse json objects on each log line and pretty print them")
 
 	cmd.AddCommand(analyzeCommand)
 
@@ -62,9 +66,9 @@ func Test_BuildAnalyzeCommand(t *testing.T) {
 		{
 			name: "Default parameters",
 			args: []string{"analyze", "file.log", "--search=test"},
-			function: func(cmd *cobra.Command, args []string) {
-				analyzeCommand, _ := BuildAnalyzeCommand(cmd, args)
-				expectedCommand := AnalyzeCommand{
+			function: func(command *cobra.Command, args []string) {
+				analyzeCommand, _ := cmd.BuildAnalyzeCommand(command, args)
+				expectedCommand := cmd.AnalyzeCommand{
 					Filepath:      "file.log",
 					SearchPattern: "test",
 				}
@@ -77,9 +81,9 @@ func Test_BuildAnalyzeCommand(t *testing.T) {
 		{
 			name: "No search pattern",
 			args: []string{"analyze", "file.log"},
-			function: func(cmd *cobra.Command, args []string) {
-				analyzeCommand, err := BuildAnalyzeCommand(cmd, args)
-				expectedCommand := AnalyzeCommand{}
+			function: func(command *cobra.Command, args []string) {
+				analyzeCommand, err := cmd.BuildAnalyzeCommand(command, args)
+				expectedCommand := cmd.AnalyzeCommand{}
 				errorMessage := "Search text is empty"
 
 				if !reflect.DeepEqual(analyzeCommand, expectedCommand) {
@@ -95,9 +99,9 @@ func Test_BuildAnalyzeCommand(t *testing.T) {
 		{
 			name: "Empty search pattern",
 			args: []string{"analyze", "file.log", "--search="},
-			function: func(cmd *cobra.Command, args []string) {
-				analyzeCommand, err := BuildAnalyzeCommand(cmd, args)
-				expectedCommand := AnalyzeCommand{}
+			function: func(command *cobra.Command, args []string) {
+				analyzeCommand, err := cmd.BuildAnalyzeCommand(command, args)
+				expectedCommand := cmd.AnalyzeCommand{}
 				errorMessage := "Search text is empty"
 
 				if !reflect.DeepEqual(analyzeCommand, expectedCommand) {
@@ -113,9 +117,9 @@ func Test_BuildAnalyzeCommand(t *testing.T) {
 		{
 			name: "No filepath argument",
 			args: []string{"analyze"},
-			function: func(cmd *cobra.Command, args []string) {
-				analyzeCommand, err := BuildAnalyzeCommand(cmd, args)
-				expectedCommand := AnalyzeCommand{}
+			function: func(command *cobra.Command, args []string) {
+				analyzeCommand, err := cmd.BuildAnalyzeCommand(command, args)
+				expectedCommand := cmd.AnalyzeCommand{}
 				errorMessage := "filepath is required as an argument"
 
 				if !reflect.DeepEqual(analyzeCommand, expectedCommand) {
@@ -170,7 +174,7 @@ func Test_CheckIfValidFile(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := CheckIfValidFile(test.filename)
+			result, err := file.CheckIfValidFile(test.filename)
 
 			if (err != nil) != test.expectError {
 				t.Errorf("Error: %v, Expect error: %v", err, test.expectError)
@@ -219,10 +223,7 @@ func Test_ScanFile(t *testing.T) {
 
       var lines []string
 
-			ProcessLogFile(AnalyzeCommand{
-				Filepath:      tmpFile.Name(),
-				SearchPattern: "test",
-			}, func(line string) {
+			file.ProcessLogFile(tmpFile.Name(), func(line string) {
         lines = append(lines, line)
 			})
 
