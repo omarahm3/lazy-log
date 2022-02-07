@@ -1,155 +1,16 @@
 package file_test
 
 import (
-	"bytes"
 	"io/ioutil"
-	"lazy-log/cmd"
 	"lazy-log/file"
 	"lazy-log/utils"
+	tests_helpers "lazy-log/tests"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/spf13/cobra"
 )
 
-func newLogAnalyzerCommand() *cobra.Command {
-	return &cobra.Command{
-		Use: "log-analyzer",
-	}
-}
-
-func newCommand(analyzeFunc func(cmd *cobra.Command, args []string)) *cobra.Command {
-	cmd := newLogAnalyzerCommand()
-
-	analyzeCommand := &cobra.Command{
-		Use: "analyze command test",
-		Run: analyzeFunc,
-	}
-
-	analyzeCommand.Flags().String("search", "", "Search pattern to track in the logs")
-	analyzeCommand.Flags().StringSlice("pattern", []string{}, "Search patterns to track in the logs")
-	analyzeCommand.Flags().Bool("json", false, "Parse json objects on each log line and pretty print them")
-
-	cmd.AddCommand(analyzeCommand)
-
-	return cmd
-}
-
-func executeCommandC(root *cobra.Command, args ...string) (c *cobra.Command, output string, err error) {
-	buffer := new(bytes.Buffer)
-	root.SetOut(buffer)
-	root.SetErr(buffer)
-	root.SetArgs(args)
-
-	c, err = root.ExecuteC()
-
-	return c, buffer.String(), err
-}
-
-func executeCommand(root *cobra.Command, args ...string) (output string, err error) {
-	_, output, err = executeCommandC(root, args...)
-	return output, err
-}
-
-func testError(test *testing.T, actual interface{}, expected interface{}) {
-	test.Errorf("\nActual:\t\t%v\nExpected:\t%v", actual, expected)
-}
-
-func Test_BuildAnalyzeCommand(t *testing.T) {
-	tests := []struct {
-		name     string
-		args     []string
-		function func(cmd *cobra.Command, args []string)
-	}{
-		{
-			name: "Default parameters",
-			args: []string{"analyze", "file.log", "--search=test"},
-			function: func(command *cobra.Command, args []string) {
-				analyzeCommand, _ := cmd.BuildAnalyzeCommand(command, args)
-				expectedCommand := cmd.AnalyzeCommand{
-					Filepath:      "file.log",
-					SearchPattern: "test",
-					Pattern:       []string{},
-					Json:          false,
-				}
-
-				if !reflect.DeepEqual(analyzeCommand, expectedCommand) {
-					testError(t, analyzeCommand, expectedCommand)
-				}
-			},
-		},
-		{
-			name: "No search pattern",
-			args: []string{"analyze", "file.log"},
-			function: func(command *cobra.Command, args []string) {
-				analyzeCommand, err := cmd.BuildAnalyzeCommand(command, args)
-				expectedCommand := cmd.AnalyzeCommand{
-          Filepath: "file.log",
-          Pattern: []string{},
-          Json: false,
-        }
-
-				if !reflect.DeepEqual(analyzeCommand, expectedCommand) {
-					testError(t, analyzeCommand, expectedCommand)
-					return
-				}
-
-				if err != nil {
-          t.Errorf("Unexpected error: {%v}", err)
-				}
-			},
-		},
-		{
-			name: "Empty search pattern",
-			args: []string{"analyze", "file.log", "--search="},
-			function: func(command *cobra.Command, args []string) {
-				analyzeCommand, err := cmd.BuildAnalyzeCommand(command, args)
-				expectedCommand := cmd.AnalyzeCommand{
-          Filepath: "file.log",
-          Pattern: []string{},
-          Json: false,
-        }
-
-				if !reflect.DeepEqual(analyzeCommand, expectedCommand) {
-					testError(t, analyzeCommand, expectedCommand)
-					return
-				}
-
-				if err != nil {
-          t.Errorf("Unexpected error: {%v}", err)
-				}
-			},
-		},
-		{
-			name: "No filepath argument",
-			args: []string{"analyze"},
-			function: func(command *cobra.Command, args []string) {
-				analyzeCommand, err := cmd.BuildAnalyzeCommand(command, args)
-				expectedCommand := cmd.AnalyzeCommand{}
-				errorMessage := "filepath is required as an argument"
-
-				if !reflect.DeepEqual(analyzeCommand, expectedCommand) {
-					testError(t, analyzeCommand, expectedCommand)
-					return
-				}
-
-				if err != nil && string(err.Error()) != errorMessage {
-					testError(t, err.Error(), errorMessage)
-				}
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			command := newCommand(test.function)
-
-			executeCommand(command, test.args...)
-		})
-	}
-}
 
 func Test_CheckIfValidFile(t *testing.T) {
 	tmpFile, err := ioutil.TempFile("", "test*.log")
@@ -190,7 +51,7 @@ func Test_CheckIfValidFile(t *testing.T) {
 			}
 
 			if result != test.expected {
-				testError(t, result, test.expectError)
+				tests_helpers.TestError(t, result, test.expectError)
 				return
 			}
 		})
@@ -238,7 +99,7 @@ func Test_ScanFile(t *testing.T) {
 			expectedOutput := strings.Split(test.fileContent, "\n")
 
 			if !reflect.DeepEqual(lines, expectedOutput) {
-				testError(t, lines, expectedOutput)
+				tests_helpers.TestError(t, lines, expectedOutput)
 				return
 			}
 		})
