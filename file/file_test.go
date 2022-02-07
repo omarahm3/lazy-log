@@ -29,7 +29,7 @@ func newCommand(analyzeFunc func(cmd *cobra.Command, args []string)) *cobra.Comm
 	}
 
 	analyzeCommand.Flags().String("search", "", "Search pattern to track in the logs")
-  analyzeCommand.Flags().StringSlice("pattern", []string{}, "Search patterns to track in the logs")
+	analyzeCommand.Flags().StringSlice("pattern", []string{}, "Search patterns to track in the logs")
 	analyzeCommand.Flags().Bool("json", false, "Parse json objects on each log line and pretty print them")
 
 	cmd.AddCommand(analyzeCommand)
@@ -54,7 +54,7 @@ func executeCommand(root *cobra.Command, args ...string) (output string, err err
 }
 
 func testError(test *testing.T, actual interface{}, expected interface{}) {
-	test.Errorf("\nActual: %v\nExpected: %v", actual, expected)
+	test.Errorf("\nActual:\t\t%v\nExpected:\t%v", actual, expected)
 }
 
 func Test_BuildAnalyzeCommand(t *testing.T) {
@@ -71,6 +71,8 @@ func Test_BuildAnalyzeCommand(t *testing.T) {
 				expectedCommand := cmd.AnalyzeCommand{
 					Filepath:      "file.log",
 					SearchPattern: "test",
+					Pattern:       []string{},
+					Json:          false,
 				}
 
 				if !reflect.DeepEqual(analyzeCommand, expectedCommand) {
@@ -221,18 +223,18 @@ func Test_ScanFile(t *testing.T) {
 
 			utils.Check(err)
 
-      var lines []string
+			var lines []string
 
 			file.ProcessLogFile(tmpFile.Name(), func(line string) {
-        lines = append(lines, line)
+				lines = append(lines, line)
 			})
 
-      expectedOutput := strings.Split(test.fileContent, "\n")
+			expectedOutput := strings.Split(test.fileContent, "\n")
 
-      if !reflect.DeepEqual(lines, expectedOutput) {
+			if !reflect.DeepEqual(lines, expectedOutput) {
 				testError(t, lines, expectedOutput)
 				return
-      }
+			}
 		})
 	}
 }
