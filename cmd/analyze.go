@@ -9,6 +9,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func analyzeLine(analyzeCommand file.AnalyzeCommand, line string) {
+  match, err := regexp.Match(analyzeCommand.SearchPattern, []byte(line))
+
+  utils.Check(err)
+
+  if match {
+    // fmt.Println(line)
+  }
+}
+
 func analyze(cmd *cobra.Command, args []string) {
 	analyzeCommand, err := file.BuildAnalyzeCommand(cmd, args)
 
@@ -21,14 +31,7 @@ func analyze(cmd *cobra.Command, args []string) {
 	}
 
 	file.ProcessLogFile(analyzeCommand, func(line string) {
-
-		match, err := regexp.Match(analyzeCommand.SearchPattern, []byte(line))
-
-		utils.Check(err)
-
-		if match {
-			fmt.Println(line)
-		}
+    analyzeLine(analyzeCommand, line)
 	})
 
 	fmt.Println(analyzeCommand)
@@ -53,4 +56,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	analyzeCmd.Flags().String("search", "", "Search pattern to track in the logs")
+  analyzeCmd.Flags().StringSlice("pattern", []string{}, "Search patterns to track in the logs")
+	analyzeCmd.Flags().Bool("json", false, "Parse json objects on each log line and pretty print them")
 }

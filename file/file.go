@@ -13,12 +13,20 @@ import (
 type AnalyzeCommand struct {
 	Filepath      string
 	SearchPattern string
+	Pattern       []string
+	Json          bool
 }
 
 func BuildAnalyzeCommand(cmd *cobra.Command, args []string) (AnalyzeCommand, error) {
 	if len(args) != 1 {
 		return AnalyzeCommand{}, errors.New("filepath is required as an argument")
 	}
+
+	pattern, err := cmd.Flags().GetStringSlice("pattern")
+	utils.Check(err)
+
+	json, err := cmd.Flags().GetBool("json")
+	utils.Check(err)
 
 	search := cmd.Flag("search").Value.String()
 
@@ -29,6 +37,8 @@ func BuildAnalyzeCommand(cmd *cobra.Command, args []string) (AnalyzeCommand, err
 	return AnalyzeCommand{
 		Filepath:      args[0],
 		SearchPattern: search,
+		Pattern:       pattern,
+		Json:          json,
 	}, nil
 }
 
