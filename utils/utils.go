@@ -37,7 +37,7 @@ func prettyJsonString(content string) string {
 // This will actually do the JSON extraction from the string
 // It will make sure that it parses an string
 // And then it will return a pretty JSON string
-func extractJsonFromSubString(substring string) (string, error) {
+func extractJsonFromSubString(substring string) (string, int, error) {
 	stack := []string{}
 	jsonString := []string{}
 
@@ -49,7 +49,7 @@ func extractJsonFromSubString(substring string) (string, error) {
 		}
 
 		if len(stack) == 0 {
-			return prettyJsonString(sliceToString(jsonString)), nil
+			return prettyJsonString(sliceToString(jsonString)), len(jsonString), nil
 		}
 
 		switch string(char) {
@@ -58,31 +58,38 @@ func extractJsonFromSubString(substring string) (string, error) {
 			stack = stack[:len(stack)-1]
 
 			if check == "[" {
-				return "", errors.New("Invalid JSON input, opening [ is not closed")
+				return "", 0, errors.New("Invalid JSON input, opening [ is not closed")
 			}
 		case "]":
 			check := stack[len(stack)-1]
 			stack = stack[:len(stack)-1]
 
 			if check == "{" {
-				return "", errors.New("Invalid JSON input, opening { is not closed")
+				return "", 0, errors.New("Invalid JSON input, opening { is not closed")
 			}
 		}
 		jsonString = append(jsonString, string(char))
 	}
 
 	if len(stack) > 0 {
-		return "", errors.New("String is not JSON, not completed")
+		return "", 0, errors.New("String is not JSON, not completed")
 	}
 
-  return prettyJsonString(sliceToString(jsonString)), nil
+  return prettyJsonString(sliceToString(jsonString)), len(jsonString), nil
 }
 
-func ExtractJsonFromString(content string) (string, error) {
-	potentialPosition := strings.Index(content, "{")
-	potentialJson := content[potentialPosition:]
+func ExtractJsonFromString(content string) (string, int, int, error) {
+	startPosition := strings.Index(content, "{")
+	potentialJson := content[startPosition:]
 
-	json, err := extractJsonFromSubString(potentialJson)
+	json, originalStringLength, err := extractJsonFromSubString(potentialJson)
 
-	return json, err
+  endPosition := originalStringLength + startPosition
+
+  if err != nil {
+    startPosition = 0
+    endPosition = 0
+  }
+
+	return json, startPosition, endPosition, err
 }
