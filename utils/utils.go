@@ -40,17 +40,15 @@ func prettyJsonString(content string) string {
 func extractJsonFromSubString(substring string) (string, int, error) {
 	stack := []string{}
 	var jsonString string
-  var char rune
 
-	for _, char = range substring {
+	for _, char := range substring {
 		if strings.ContainsAny(string(char), "{[") {
 			stack = append(stack, string(char))
-      jsonString += string(char)
+			jsonString += string(char)
 			continue
 		}
 
 		if len(stack) == 0 {
-      fmt.Println("Break inside loop")
 			return prettyJsonString(jsonString), len(jsonString), nil
 		}
 
@@ -70,15 +68,14 @@ func extractJsonFromSubString(substring string) (string, int, error) {
 				return "", 0, errors.New("Invalid JSON input, opening { is not closed")
 			}
 		}
-    jsonString += string(char)
+		jsonString += string(char)
 	}
 
 	if len(stack) > 0 {
 		return "", 0, errors.New("String is not JSON, not completed")
 	}
 
-  fmt.Println("Break at the end, Char is: ", string(char))
-  return prettyJsonString(jsonString), len(jsonString), nil
+	return prettyJsonString(jsonString), len(jsonString), nil
 }
 
 func ExtractJsonFromString(content string) (string, int, int, error) {
@@ -87,12 +84,12 @@ func ExtractJsonFromString(content string) (string, int, int, error) {
 
 	json, originalStringLength, err := extractJsonFromSubString(potentialJson)
 
-  endPosition := originalStringLength + startPosition
+	endPosition := originalStringLength + startPosition
 
-  if err != nil {
-    startPosition = 0
-    endPosition = 0
-  }
+	if err != nil {
+		startPosition = 0
+		endPosition = 0
+	}
 
 	return json, startPosition, endPosition, err
 }

@@ -39,35 +39,55 @@ func BuildAnalyzeCommand(cmd *cobra.Command, args []string) (AnalyzeCommand, err
 }
 
 func regexMatch(content string, pattern string) bool {
-  match, err := regexp.Match(pattern, []byte(content))
+	match, err := regexp.Match(pattern, []byte(content))
 
-  utils.Check(err)
+	utils.Check(err)
 
-  return match
+	return match
 }
 
 func analyzeLine(analyzeCommand AnalyzeCommand, line string) {
-  var processedLine string
+	var processedLine string
 
-  if analyzeCommand.SearchPattern != "" {
-    match := regexMatch(line, analyzeCommand.SearchPattern)
+	if analyzeCommand.SearchPattern != "" {
+		match := regexMatch(line, analyzeCommand.SearchPattern)
 
-    if !match {
-      return
-    }
+		if !match {
+			return
+		}
 
-    processedLine = line
-  }
+		processedLine = line
+	}
 
-  for _, pattern := range analyzeCommand.Pattern {
-    match := regexMatch(processedLine, pattern)
+	if len(analyzeCommand.Pattern) == 0 {
+		json, start, end, err := utils.ExtractJsonFromString(line)
 
-    if !match || !analyzeCommand.Json {
-      continue
-    }
+		utils.Check(err)
 
-    utils.ExtractJsonFromString(line)
-  }
+		processedLine = processedLine[:start] + "[json-object]" + processedLine[end:]
+
+		processedLine += fmt.Sprintf("\n[json-object] => %s", json)
+
+		fmt.Println(processedLine)
+	} else {
+		for _, pattern := range analyzeCommand.Pattern {
+			match := regexMatch(processedLine, pattern)
+
+			if !match || !analyzeCommand.Json {
+				continue
+			}
+
+			json, start, end, err := utils.ExtractJsonFromString(line)
+
+			utils.Check(err)
+
+			processedLine = processedLine[:start] + "[json-object]" + processedLine[end:]
+
+			processedLine += fmt.Sprintf("\n[json-object] => %s", json)
+
+			fmt.Println(processedLine)
+		}
+	}
 }
 
 func analyze(cmd *cobra.Command, args []string) {
@@ -82,10 +102,8 @@ func analyze(cmd *cobra.Command, args []string) {
 	}
 
 	file.ProcessLogFile(analyzeCommand.Filepath, func(line string) {
-    analyzeLine(analyzeCommand, line)
+		analyzeLine(analyzeCommand, line)
 	})
-
-	fmt.Println(analyzeCommand)
 }
 
 // analyzeCmd represents the analyze command
@@ -107,6 +125,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	analyzeCmd.Flags().String("search", "", "Search pattern to track in the logs")
-  analyzeCmd.Flags().StringSlice("pattern", []string{}, "Search patterns to track in the logs")
+	analyzeCmd.Flags().StringSlice("pattern", []string{}, "Search patterns to track in the logs")
 	analyzeCmd.Flags().Bool("json", false, "Parse json objects on each log line and pretty print them")
 }
